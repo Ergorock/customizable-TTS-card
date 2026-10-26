@@ -404,14 +404,16 @@ const STYLES = `
   .empty { font-size: 0.85rem; color: var(--secondary-text-color); font-style: italic; }
 `;
 
-customElements.define("customizable-tts-card", CustomizableTtsCard);
+if (!customElements.get("customizable-tts-card")) customElements.define("customizable-tts-card", CustomizableTtsCard);
 
 window.customCards = window.customCards || [];
-window.customCards.push({
-  type: "customizable-tts-card",
-  name: "Customizable TTS Card",
-  description: "Diffuser un message vocal sur une sélection d'enceintes, avec annonces enregistrées.",
-  preview: false,
-});
+if (!window.customCards.some((c) => c.type === "customizable-tts-card")) {
+  window.customCards.push({
+    type: "customizable-tts-card",
+    name: "Customizable TTS Card",
+    description: "Diffuser un message vocal sur une sélection d'enceintes, avec annonces enregistrées.",
+    preview: false,
+  });
+}
 
 console.info(`%c CUSTOMIZABLE-TTS-CARD %c v${CARD_VERSION} `, "background:#03a9f4;color:#fff", "background:#444;color:#fff");

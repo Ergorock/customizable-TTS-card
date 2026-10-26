@@ -9,9 +9,17 @@ Carte Lovelace pour Home Assistant qui diffuse un message vocal (TTS) sur une s�
 
 ## Installation
 
-1. Copier `customizable-tts-card.js` dans `/config/www/`
-2. Ajouter la ressource : **Paramètres → Tableaux de bord → Ressources** → `/local/customizable-tts-card.js` (type *module*)
-3. Rafraîchir le navigateur (Ctrl+Maj+R)
+### HACS (dépôt personnalisé)
+
+1. HACS → menu ⋮ → *Dépôts personnalisés* → ajoutez `https://github.com/Ergorock/customizable-TTS-card`, catégorie **Dashboard**.
+2. Installez **Customizable TTS Card**, puis rechargez le navigateur.
+
+### Manuelle
+
+1. Copiez `customizable-tts-card.js` dans `config/www/customizable-tts-card.js`.
+2. *Paramètres → Tableaux de bord → ⋮ → Ressources* : ajoutez `/local/customizable-tts-card.js?v=1.0.0` (type *Module JavaScript*).
+
+Rafraîchissez ensuite le navigateur (Ctrl+Maj+R).
 
 ## Configuration
 
