@@ -1,42 +1,45 @@
 # Customizable TTS Card
 
-Carte Lovelace pour Home Assistant qui diffuse un message vocal (TTS) sur une sélection d'enceintes, avec des annonces enregistrées réutilisables.
+*[Version française](README.fr.md)*
 
-- Sélection des enceintes par simples puces, ou « Partout »
-- Annonces enregistrées : clic pour remplir le message, ▶ pour diffuser directement
-- Enregistrement de nouvelles annonces depuis la carte (stockées dans les données utilisateur HA, synchronisées entre appareils)
-- Volume d'annonce réglable ; la musique en cours reprend après l'annonce (`announce: true`)
+Lovelace card for Home Assistant that broadcasts a voice message (TTS) to a selection of speakers, with reusable saved announcements.
+
+- Pick speakers with simple chips, or “Everywhere”
+- Saved announcements: click to fill in the message, ▶ to play it right away
+- Save new announcements from the card (stored in the HA user data, synced across devices)
+- Adjustable announcement volume; the music playing resumes after the announcement (`announce: true`)
+- Interface in English and French (follows the Home Assistant language)
 
 ## Installation
 
-### HACS (dépôt personnalisé)
+### HACS (custom repository)
 
-1. HACS → menu ⋮ → *Dépôts personnalisés* → ajoutez `https://github.com/Ergorock/customizable-TTS-card`, catégorie **Dashboard**.
-2. Installez **Customizable TTS Card**, puis rechargez le navigateur.
+1. HACS → ⋮ menu → *Custom repositories* → add `https://github.com/Ergorock/customizable-TTS-card`, category **Dashboard**.
+2. Install **Customizable TTS Card**, then reload your browser.
 
-### Manuelle
+### Manual
 
-1. Copiez `customizable-tts-card.js` dans `config/www/customizable-tts-card.js`.
-2. *Paramètres → Tableaux de bord → ⋮ → Ressources* : ajoutez `/local/customizable-tts-card.js?v=1.0.0` (type *Module JavaScript*).
+1. Copy `customizable-tts-card.js` to `config/www/customizable-tts-card.js`.
+2. *Settings → Dashboards → ⋮ → Resources*: add `/local/customizable-tts-card.js?v=1.0.0` (type *JavaScript module*).
 
-Rafraîchissez ensuite le navigateur (Ctrl+Maj+R).
+Then refresh your browser (Ctrl+Shift+R).
 
 ## Configuration
 
 ```yaml
 type: custom:customizable-tts-card
-title: Annonces
-tts_engine: tts.google_translate_fr_com
-entities:                 # vide = toutes les enceintes compatibles « announce »
-  - media_player.salon
-  - entity: media_player.cuisine
-    name: Cuisine
-volume: 35                # volume d'annonce par défaut (0-100), optionnel
-language: fr              # optionnel, transmis au moteur TTS
-announcements:            # annonces fixes, en plus de celles enregistrées depuis la carte
-  - name: À table
-    message: À table, le repas est prêt !
+title: Announcements
+tts_engine: tts.google_translate_en_com
+entities:                 # empty = every speaker that supports “announce”
+  - media_player.living_room
+  - entity: media_player.kitchen
+    name: Kitchen
+volume: 35                # default announcement volume (0-100), optional
+language: en              # optional, passed to the TTS engine
+announcements:            # fixed announcements, in addition to the ones saved from the card
+  - name: Dinner
+    message: Dinner is ready!
     icon: mdi:silverware-fork-knife
 ```
 
-L'annonce est envoyée via `media_player.play_media` avec `announce: true` et, si un volume est défini, `extra: {volume: N}` (pris en charge par l'intégration Sonos).
+The announcement is sent with `media_player.play_media` and `announce: true` and, when a volume is set, `extra: {volume: N}` (supported by the Sonos integration).

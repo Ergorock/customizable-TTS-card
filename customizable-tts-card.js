@@ -23,6 +23,82 @@ const ANNOUNCE_FEATURE = 1048576; // MediaPlayerEntityFeature.MEDIA_ANNOUNCE
 const STORAGE_KEY = "customizable-tts-card";
 const LEGACY_STORAGE_KEY = "annonce-card"; // ancien nom de la carte, pour reprendre les annonces déjà enregistrées
 
+const STRINGS = {
+  en: {
+    card_description: "Broadcast a voice message to a selection of speakers, with saved announcements.",
+    default_title: "Announcements",
+    label_title: "Title",
+    label_tts_engine: "Text-to-speech engine",
+    label_entities: "Speakers (empty = all compatible ones)",
+    label_volume: "Default announcement volume",
+    save_failed: "Could not save: {error}",
+    empty_message: "The message is empty",
+    no_speaker: "Select at least one speaker",
+    no_engine: "No TTS engine configured",
+    sent_one: "Announcement sent to {n} speaker",
+    sent_other: "Announcement sent to {n} speakers",
+    send_failed: "Announcement failed: {error}",
+    speakers: "Speakers",
+    saved_announcements: "Saved announcements",
+    message: "Message",
+    message_placeholder: "Type your message…",
+    preset_name: "Announcement name",
+    cancel: "Cancel",
+    unchanged: "unchanged",
+    save_title: "Save this message",
+    save: "Save",
+    announce: "Announce",
+    write_first: "Write a message first",
+    preset_saved: "Announcement “{name}” saved",
+    no_presets: "No announcements yet. Write a message, then “Save”.",
+    play_now: "Play now",
+    delete: "Delete",
+    everywhere: "Everywhere",
+    no_speakers_found: "No compatible speaker found.",
+  },
+  fr: {
+    card_description: "Diffuser un message vocal sur une sélection d'enceintes, avec annonces enregistrées.",
+    default_title: "Annonces",
+    label_title: "Titre",
+    label_tts_engine: "Moteur de synthèse vocale",
+    label_entities: "Enceintes (vide = toutes celles compatibles)",
+    label_volume: "Volume d'annonce par défaut",
+    save_failed: "Enregistrement impossible : {error}",
+    empty_message: "Le message est vide",
+    no_speaker: "Sélectionnez au moins une enceinte",
+    no_engine: "Aucun moteur TTS configuré",
+    sent_one: "Annonce envoyée sur {n} enceinte",
+    sent_other: "Annonce envoyée sur {n} enceintes",
+    send_failed: "Échec de l'annonce : {error}",
+    speakers: "Enceintes",
+    saved_announcements: "Annonces enregistrées",
+    message: "Message",
+    message_placeholder: "Tapez votre message…",
+    preset_name: "Nom de l'annonce",
+    cancel: "Annuler",
+    unchanged: "inchangé",
+    save_title: "Enregistrer ce message",
+    save: "Enregistrer",
+    announce: "Annoncer",
+    write_first: "Écrivez d'abord un message",
+    preset_saved: "Annonce « {name} » enregistrée",
+    no_presets: "Aucune annonce. Écrivez un message puis « Enregistrer ».",
+    play_now: "Diffuser maintenant",
+    delete: "Supprimer",
+    everywhere: "Partout",
+    no_speakers_found: "Aucune enceinte compatible trouvée.",
+  },
+};
+
+// Langue de l'interface : celle de Home Assistant (français ou anglais, anglais par défaut)
+let lang = (navigator.language || "").startsWith("fr") ? "fr" : "en";
+const setLang = (hass) => {
+  const l = hass?.locale?.language || hass?.language;
+  if (l) lang = l.startsWith("fr") ? "fr" : "en";
+};
+const t = (key, vars = {}) =>
+  (STRINGS[lang][key] ?? STRINGS.en[key] ?? key).replace(/\{(\w+)\}/g, (_, k) => vars[k] ?? "");
+
 const esc = (s) =>
   String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
 
@@ -36,22 +112,18 @@ class CustomizableTtsCard extends HTMLElement {
         { name: "volume", selector: { number: { min: 0, max: 100, step: 5, mode: "slider" } } },
       ],
       computeLabel: (s) =>
-        ({
-          title: "Titre",
-          tts_engine: "Moteur de synthèse vocale",
-          entities: "Enceintes (vide = toutes celles compatibles)",
-          volume: "Volume d'annonce par défaut",
-        })[s.name],
+t(`label_${s.name}`),
     };
   }
 
   static getStubConfig(hass) {
+    setLang(hass);
     const tts = Object.keys(hass.states).find((e) => e.startsWith("tts."));
-    return { title: "Annonces", tts_engine: tts };
+    return { title: t("default_title"), tts_engine: tts };
   }
 
   setConfig(config) {
-    this._config = { title: "Annonces", announcements: [], ...config };
+    this._config = { announcements: [], ...config };
     this._volume = this._config.volume ?? null;
     if (this._hass) this._render();
   }
@@ -59,6 +131,7 @@ class CustomizableTtsCard extends HTMLElement {
   set hass(hass) {
     const first = !this._hass;
     this._hass = hass;
+    setLang(hass);
     if (first) {
       this._selected = new Set();
       this._userPresets = [];
@@ -134,18 +207,18 @@ class CustomizableTtsCard extends HTMLElement {
         key: STORAGE_KEY,
         value: { presets: this._userPresets, selected: [...this._selected], volume: this._volume },
       })
-      .catch((err) => this._toast(`Enregistrement impossible : ${err.message || err}`));
+      .catch((err) => this._toast(t("save_failed", { error: err.message || err })));
   }
 
   /* ---------- Actions ---------- */
 
   async _announce(message) {
     message = (message || "").trim();
-    if (!message) return this._toast("Le message est vide");
+    if (!message) return this._toast(t("empty_message"));
     const targets = [...this._selected].filter((e) => this._hass.states[e]?.state !== "unavailable");
-    if (!targets.length) return this._toast("Sélectionnez au moins une enceinte");
+    if (!targets.length) return this._toast(t("no_speaker"));
     const engine = this._ttsEngine;
-    if (!engine) return this._toast("Aucun moteur TTS configuré");
+    if (!engine) return this._toast(t("no_engine"));
 
     const params = new URLSearchParams({ message });
     if (this._config.language) params.set("language", this._config.language);
@@ -160,9 +233,9 @@ class CustomizableTtsCard extends HTMLElement {
     btn.disabled = true;
     try {
       await this._hass.callService("media_player", "play_media", data, { entity_id: targets });
-      this._toast(`Annonce envoyée sur ${targets.length} enceinte${targets.length > 1 ? "s" : ""}`);
+      this._toast(t(targets.length > 1 ? "sent_other" : "sent_one", { n: targets.length }));
     } catch (err) {
-      this._toast(`Échec de l'annonce : ${err.message || err}`);
+      this._toast(t("send_failed", { error: err.message || err }));
     } finally {
       btn.disabled = false;
     }
@@ -178,36 +251,37 @@ class CustomizableTtsCard extends HTMLElement {
     if (!this._config || !this._hass) return;
     if (!this.shadowRoot) this.attachShadow({ mode: "open" });
     const prevMessage = this.shadowRoot.querySelector("#message")?.value || "";
+    const title = this._config.title === undefined ? t("default_title") : this._config.title;
 
     this.shadowRoot.innerHTML = `
       <style>${STYLES}</style>
       <ha-card>
-        ${this._config.title ? `<div class="header"><ha-icon icon="mdi:bullhorn"></ha-icon>${esc(this._config.title)}</div>` : ""}
+        ${title ? `<div class="header"><ha-icon icon="mdi:bullhorn"></ha-icon>${esc(title)}</div>` : ""}
         <div class="content">
-          <div class="section-label">Enceintes</div>
+          <div class="section-label">${t("speakers")}</div>
           <div class="chips" id="speakers"></div>
 
-          <div class="section-label">Annonces enregistrées</div>
+          <div class="section-label">${t("saved_announcements")}</div>
           <div class="presets" id="presets">${this._presetsHtml()}</div>
 
-          <div class="section-label">Message</div>
-          <textarea id="message" rows="2" placeholder="Tapez votre message…"></textarea>
+          <div class="section-label">${t("message")}</div>
+          <textarea id="message" rows="2" placeholder="${t("message_placeholder")}"></textarea>
 
           <div class="save-row" id="save-row" hidden>
-            <input id="preset-name" type="text" placeholder="Nom de l'annonce" />
+            <input id="preset-name" type="text" placeholder="${esc(t("preset_name"))}" />
             <button class="btn ghost" id="save-ok">OK</button>
-            <button class="btn ghost" id="save-cancel">Annuler</button>
+            <button class="btn ghost" id="save-cancel">${t("cancel")}</button>
           </div>
 
           <div class="volume-row">
             <ha-icon icon="mdi:volume-high"></ha-icon>
             <input id="volume" type="range" min="0" max="100" step="5" value="${this._volume ?? 30}" />
-            <span id="volume-label">${this._volume == null ? "inchangé" : `${this._volume}%`}</span>
+            <span id="volume-label">${this._volume == null ? t("unchanged") : `${this._volume}%`}</span>
           </div>
 
           <div class="actions">
-            <button class="btn ghost" id="save" title="Enregistrer ce message"><ha-icon icon="mdi:content-save-outline"></ha-icon>Enregistrer</button>
-            <button class="btn primary" id="send"><ha-icon icon="mdi:bullhorn-outline"></ha-icon>Annoncer</button>
+            <button class="btn ghost" id="save" title="${t("save_title")}"><ha-icon icon="mdi:content-save-outline"></ha-icon>${t("save")}</button>
+            <button class="btn primary" id="send"><ha-icon icon="mdi:bullhorn-outline"></ha-icon>${t("announce")}</button>
           </div>
         </div>
       </ha-card>`;
@@ -224,7 +298,7 @@ class CustomizableTtsCard extends HTMLElement {
     const saveRow = root.querySelector("#save-row");
     const nameInput = root.querySelector("#preset-name");
     root.querySelector("#save").addEventListener("click", () => {
-      if (!msg.value.trim()) return this._toast("Écrivez d'abord un message");
+      if (!msg.value.trim()) return this._toast(t("write_first"));
       saveRow.hidden = false;
       nameInput.value = msg.value.trim().slice(0, 30);
       nameInput.focus();
@@ -236,7 +310,7 @@ class CustomizableTtsCard extends HTMLElement {
       this._userPresets.push({ name, message: msg.value.trim() });
       this._saveUserData();
       this._render();
-      this._toast(`Annonce « ${name} » enregistrée`);
+      this._toast(t("preset_saved", { name }));
     };
     root.querySelector("#save-ok").addEventListener("click", confirmSave);
     nameInput.addEventListener("keydown", (ev) => ev.key === "Enter" && confirmSave());
@@ -252,7 +326,7 @@ class CustomizableTtsCard extends HTMLElement {
     volLabel.addEventListener("click", () => {
       // Clic sur le libellé : revenir à "volume inchangé"
       this._volume = null;
-      volLabel.textContent = "inchangé";
+      volLabel.textContent = t("unchanged");
       this._saveUserData();
     });
 
@@ -279,15 +353,15 @@ class CustomizableTtsCard extends HTMLElement {
 
   _presetsHtml() {
     const presets = this._presets;
-    if (!presets.length) return `<div class="empty">Aucune annonce. Écrivez un message puis « Enregistrer ».</div>`;
+    if (!presets.length) return `<div class="empty">${t("no_presets")}</div>`;
     return presets
       .map(
         (p, i) => `
         <div class="preset" data-preset="${i}" title="${esc(p.message)}">
           <ha-icon icon="${esc(p.icon || "mdi:message-text-outline")}"></ha-icon>
           <span class="preset-name">${esc(p.name)}</span>
-          <button class="icon-btn" data-action="play" title="Diffuser maintenant"><ha-icon icon="mdi:play"></ha-icon></button>
-          ${p.fixed ? "" : `<button class="icon-btn" data-action="delete" title="Supprimer"><ha-icon icon="mdi:close"></ha-icon></button>`}
+          <button class="icon-btn" data-action="play" title="${t("play_now")}"><ha-icon icon="mdi:play"></ha-icon></button>
+          ${p.fixed ? "" : `<button class="icon-btn" data-action="delete" title="${t("delete")}"><ha-icon icon="mdi:close"></ha-icon></button>`}
         </div>`
       )
       .join("");
@@ -313,9 +387,9 @@ class CustomizableTtsCard extends HTMLElement {
         )
         .join("") +
       (speakers.length > 1
-        ? `<button class="chip all ${allSelected ? "on" : ""}" data-all="1"><ha-icon icon="mdi:home-sound-out"></ha-icon>Partout</button>`
+        ? `<button class="chip all ${allSelected ? "on" : ""}" data-all="1"><ha-icon icon="mdi:home-sound-out"></ha-icon>${t("everywhere")}</button>`
         : "") +
-      (speakers.length ? "" : `<div class="empty">Aucune enceinte compatible trouvée.</div>`);
+      (speakers.length ? "" : `<div class="empty">${t("no_speakers_found")}</div>`);
 
     container.onclick = (ev) => {
       const chip = ev.target.closest(".chip");
@@ -411,7 +485,7 @@ if (!window.customCards.some((c) => c.type === "customizable-tts-card")) {
   window.customCards.push({
     type: "customizable-tts-card",
     name: "Customizable TTS Card",
-    description: "Diffuser un message vocal sur une sélection d'enceintes, avec annonces enregistrées.",
+    description: t("card_description"),
     preview: false,
   });
 }
