@@ -1,10 +1,10 @@
 /**
- * Annonce Card
+ * Customizable TTS Card
  * Carte Lovelace pour diffuser un message vocal (TTS) sur une sélection
  * d'enceintes, avec des annonces enregistrées réutilisables.
  *
  * Exemple :
- *   type: custom:annonce-card
+ *   type: custom:customizable-tts-card
  *   title: Annonces
  *   tts_engine: tts.google_translate_fr_com
  *   entities:
@@ -20,12 +20,13 @@
 
 const CARD_VERSION = "1.0.0";
 const ANNOUNCE_FEATURE = 1048576; // MediaPlayerEntityFeature.MEDIA_ANNOUNCE
-const STORAGE_KEY = "annonce-card";
+const STORAGE_KEY = "customizable-tts-card";
+const LEGACY_STORAGE_KEY = "annonce-card"; // ancien nom de la carte, pour reprendre les annonces déjà enregistrées
 
 const esc = (s) =>
   String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
 
-class AnnonceCard extends HTMLElement {
+class CustomizableTtsCard extends HTMLElement {
   static getConfigForm() {
     return {
       schema: [
@@ -114,14 +115,14 @@ class AnnonceCard extends HTMLElement {
 
   async _loadUserData() {
     try {
-      const res = await this._hass.connection.sendMessagePromise({ type: "frontend/get_user_data", key: STORAGE_KEY });
-      const data = res?.value || {};
+      const get = (key) => this._hass.connection.sendMessagePromise({ type: "frontend/get_user_data", key });
+      const data = (await get(STORAGE_KEY))?.value || (await get(LEGACY_STORAGE_KEY))?.value || {};
       this._userPresets = Array.isArray(data.presets) ? data.presets : [];
       const known = new Set(this._speakers.map((s) => s.entity));
       this._selected = new Set((data.selected || []).filter((e) => known.has(e)));
       if (this._config.volume == null && data.volume != null) this._volume = data.volume;
     } catch (err) {
-      console.warn("annonce-card: lecture des données utilisateur impossible", err);
+      console.warn("customizable-tts-card: lecture des données utilisateur impossible", err);
     }
     this._render();
   }
@@ -403,14 +404,14 @@ const STYLES = `
   .empty { font-size: 0.85rem; color: var(--secondary-text-color); font-style: italic; }
 `;
 
-customElements.define("annonce-card", AnnonceCard);
+customElements.define("customizable-tts-card", CustomizableTtsCard);
 
 window.customCards = window.customCards || [];
 window.customCards.push({
-  type: "annonce-card",
-  name: "Annonce Card",
+  type: "customizable-tts-card",
+  name: "Customizable TTS Card",
   description: "Diffuser un message vocal sur une sélection d'enceintes, avec annonces enregistrées.",
   preview: false,
 });
 
-console.info(`%c ANNONCE-CARD %c v${CARD_VERSION} `, "background:#03a9f4;color:#fff", "background:#444;color:#fff");
+console.info(`%c CUSTOMIZABLE-TTS-CARD %c v${CARD_VERSION} `, "background:#03a9f4;color:#fff", "background:#444;color:#fff");

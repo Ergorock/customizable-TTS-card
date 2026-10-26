@@ -1,4 +1,4 @@
-# Annonce Card
+# Customizable TTS Card
 
 Carte Lovelace pour Home Assistant qui diffuse un message vocal (TTS) sur une sélection d'enceintes, avec des annonces enregistrées réutilisables.
 
@@ -9,14 +9,14 @@ Carte Lovelace pour Home Assistant qui diffuse un message vocal (TTS) sur une s�
 
 ## Installation
 
-1. Copier `annonce-card.js` dans `/config/www/`
-2. Ajouter la ressource : **Paramètres → Tableaux de bord → Ressources** → `/local/annonce-card.js` (type *module*)
+1. Copier `customizable-tts-card.js` dans `/config/www/`
+2. Ajouter la ressource : **Paramètres → Tableaux de bord → Ressources** → `/local/customizable-tts-card.js` (type *module*)
 3. Rafraîchir le navigateur (Ctrl+Maj+R)
 
 ## Configuration
 
 ```yaml
-type: custom:annonce-card
+type: custom:customizable-tts-card
 title: Annonces
 tts_engine: tts.google_translate_fr_com
 entities:                 # vide = toutes les enceintes compatibles « announce »
